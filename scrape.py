@@ -1,16 +1,42 @@
-# This is a sample Python script.
+import requests
+from bs4 import BeautifulSoup
+import pprint
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+response = requests.get('https://news.ycombinator.com/')
+response2 = requests.get('https://news.ycombinator.com/news?p=2')
+soup = BeautifulSoup(response.text, 'html.parser')
+soup2 = BeautifulSoup(response2.text, 'html.parser')
+
+# print(soup.find_all('div'))
+_links = soup.select('.titlelink')
+_links2 = soup2.select('.titlelink')
+# votes = soup.select('.score')
+_subtext = soup.select('.subtext')
+_subtext2 = soup2.select('.subtext')
+
+mega_links = _links + _links2
+mega_subtext = _subtext + _subtext2
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def sort_stories_by_vote(hn_list):
+    return sorted(hn_list, key=lambda k: k['votes'], reverse=True)
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def create_custom_hn(links, subtext):
+    hn = []
+    for idx, item in enumerate(links):
+        title = links[idx].getText()
+        href = links[idx].get('href', None)
+        vote = subtext[idx].select('.score')
+        if len(vote):
+            points = int(vote[0].getText().replace(' points', ''))
+            if points > 80:
+                hn.append({
+                    'title': title,
+                    'link': href,
+                    'votes': points
+                })
+    return sort_stories_by_vote(hn)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+pprint.pprint(create_custom_hn(mega_links, mega_subtext))
